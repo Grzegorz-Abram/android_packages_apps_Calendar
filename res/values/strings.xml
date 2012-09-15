@@ -94,6 +94,24 @@
         <!-- Label for displaying week of the year for all week values [CHAR LIMIT=16] -->
         <item quantity="other">WEEK <xliff:g id="count">%d</xliff:g></item>
     </plurals>
+    <plurals name="Nmonths">
+        <!-- This is the label for a reminder of 1 month. -->
+        <item quantity="one">1 month</item>
+        <!-- This is the label for a reminder of 2 or more months. The actual number of
+             months is a parameter. -->
+        <item quantity="other"><xliff:g id="count">%d</xliff:g> months</item>
+    </plurals>
+    <!-- This is the number of years displayed for a calendar reminder.  For example,
+         a reminder of 2 years would be displayed as '2 years'.  The translation
+         should use the shortest acceptable abbreviation of 'year' to save space. -->
+    <plurals name="Nyears">
+        <!-- This is the label for a reminder of 1 year. -->
+        <item quantity="one">1 year</item>
+        <!-- This is the label for a reminder of 2 or more years. The actual number of
+             years is a parameter. -->
+        <item quantity="other"><xliff:g id="count">%d</xliff:g> years</item>
+    </plurals>
+	<string name="ago_label">"ago"</string>
 
     <!-- Menu items: -->
     <skip/>

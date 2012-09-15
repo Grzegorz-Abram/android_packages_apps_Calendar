@@ -61,6 +61,7 @@ import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.format.DateUtils;
 import android.text.format.Time;
 import android.text.method.LinkMovementMethod;
 import android.text.method.MovementMethod;
@@ -179,6 +180,7 @@ public class EventInfoFragment extends DialogFragment implements OnCheckedChange
     private static final int EVENT_INDEX_RRULE = 2;
     private static final int EVENT_INDEX_ALL_DAY = 3;
     private static final int EVENT_INDEX_CALENDAR_ID = 4;
+    private static final int EVENT_INDEX_DTSTART = 5;
     private static final int EVENT_INDEX_SYNC_ID = 6;
     private static final int EVENT_INDEX_EVENT_TIMEZONE = 7;
     private static final int EVENT_INDEX_DESCRIPTION = 8;
@@ -255,6 +257,7 @@ public class EventInfoFragment extends DialogFragment implements OnCheckedChange
     private Cursor mAttendeesCursor;
     private Cursor mCalendarsCursor;
     private Cursor mRemindersCursor;
+    private long mEventDtStart;
 
     private static float mScale = 0; // Used for supporting different screen densities
 
@@ -811,6 +814,7 @@ public class EventInfoFragment extends DialogFragment implements OnCheckedChange
         mHasAlarm = (mEventCursor.getInt(EVENT_INDEX_HAS_ALARM) == 1)?true:false;
         mMaxReminders = mEventCursor.getInt(EVENT_INDEX_MAX_REMINDERS);
         mCalendarAllowedReminders =  mEventCursor.getString(EVENT_INDEX_ALLOWED_REMINDERS);
+        mEventDtStart = mEventCursor.getLong(EVENT_INDEX_DTSTART);
         return false;
     }
 
@@ -1121,6 +1125,17 @@ public class EventInfoFragment extends DialogFragment implements OnCheckedChange
     }
 
     private void updateEvent(View view) {
+        Time timeDtstart = new Time();
+        Time timeBegin = new Time();
+        Time timeNow = new Time();
+
+        int anniversary;
+        int daysAgo;
+        int monthsAgo;
+        int yearsAgo;
+
+        String ago;
+
         if (mEventCursor == null || view == null) {
             return;
         }
@@ -1192,6 +1207,73 @@ public class EventInfoFragment extends DialogFragment implements OnCheckedChange
         if (repeatString == null) {
             view.findViewById(R.id.when_repeat).setVisibility(View.GONE);
         } else {
+        	int flags;
+            flags = DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_YEAR
+                    | DateUtils.FORMAT_SHOW_WEEKDAY | DateUtils.FORMAT_ABBREV_MONTH
+                    | DateUtils.FORMAT_ABBREV_WEEKDAY;
+
+            repeatString += " (";
+            repeatString += getResources().getText(R.string.edit_event_from_label).toString()
+                    .toLowerCase();
+            repeatString += " ";
+            repeatString += Utils.formatDateRange(mContext, mEventDtStart, mEventDtStart, flags)
+                    .toString();
+            repeatString += ")";
+
+            timeDtstart.set(mEventDtStart);
+            timeBegin.set(mStartMillis);
+            timeNow.set(System.currentTimeMillis());
+
+            anniversary = timeBegin.year - timeDtstart.year;
+            daysAgo = timeNow.monthDay - timeDtstart.monthDay;
+            monthsAgo = timeNow.month - timeDtstart.month;
+            yearsAgo = timeNow.year - timeDtstart.year;
+
+            if (daysAgo < 0) {
+                daysAgo += timeDtstart.getActualMaximum(Time.MONTH_DAY);
+                monthsAgo -= 1;
+            }
+
+            if (monthsAgo < 0) {
+                monthsAgo += 12;
+                yearsAgo -= 1;
+            }
+
+            if (rRule.contains("FREQ=YEARLY") && !rRule.contains("INTERVAL")
+                    && !rRule.contains("BYDAY") && !rRule.contains("BYMONTH")
+                    && !rRule.contains("BYMONTHDAY") && !rRule.contains("BYHOUR")
+                    && !rRule.contains("BYMINUTE")) {
+                if (anniversary > 0) {
+                	mTitle.append(" <" + anniversary + ">");
+                }
+                
+                if (yearsAgo > 0 || monthsAgo > 0 || daysAgo > 0) {
+                    repeatString += " - ";
+
+                    if (yearsAgo > 0) {
+                        ago = getResources().getQuantityString(R.plurals.Nyears, yearsAgo);
+                        repeatString += String.format(ago, yearsAgo);
+                        repeatString += " ";
+                    }
+
+                    if (monthsAgo > 0) {
+                        ago = getResources().getQuantityString(R.plurals.Nmonths, monthsAgo);
+                        repeatString += String.format(ago, monthsAgo);
+                        repeatString += " ";
+                    }
+
+                    if (daysAgo > 0) {
+                        ago = getResources().getQuantityString(R.plurals.Ndays, daysAgo);
+                        repeatString += String.format(ago, daysAgo);
+                        repeatString += " ";
+                    }
+
+                    repeatString += getResources().getText(R.string.ago_label).toString();
+                }
+
+                repeatString += ")";
+            }
+
             setTextCommon(view, R.id.when_repeat, repeatString);
         }
 

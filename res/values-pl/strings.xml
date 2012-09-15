@@ -48,6 +48,17 @@
   <plurals name="weekN">
     <item quantity="other" msgid="8085184869561028365">"TYDZIEŃ <xliff:g id="COUNT">%d</xliff:g>"</item>
   </plurals>
+  <plurals name="Nmonths">
+    <item quantity="one">"1 miesiąc"</item>
+    <item quantity="few">"<xliff:g id="COUNT">%d</xliff:g> miesiące"</item>
+    <item quantity="other">"<xliff:g id="COUNT">%d</xliff:g> miesięcy"</item>
+  </plurals>
+  <plurals name="Nyears">
+    <item quantity="one">"1 rok"</item>
+    <item quantity="few">"<xliff:g id="COUNT">%d</xliff:g> lata"</item>
+    <item quantity="other">"<xliff:g id="COUNT">%d</xliff:g> lat"</item>
+  </plurals>
+    <string name="ago_label">"temu"</string>
     <string name="calendar_refresh" msgid="6172731193680500025">"Odśwież"</string>
     <string name="show_day_view" msgid="5782512782605466016">"Pokaż dzień"</string>
     <string name="agenda_view" msgid="5566084759423843245">"Plan dnia"</string>
