@@ -122,6 +122,7 @@ public class EventInfoActivity extends Activity implements View.OnClickListener,
     private static final int EVENT_INDEX_RRULE = 2;
     private static final int EVENT_INDEX_ALL_DAY = 3;
     private static final int EVENT_INDEX_CALENDAR_ID = 4;
+    private static final int EVENT_INDEX_DTSTART = 5;
     private static final int EVENT_INDEX_SYNC_ID = 6;
     private static final int EVENT_INDEX_EVENT_TIMEZONE = 7;
     private static final int EVENT_INDEX_DESCRIPTION = 8;
@@ -201,6 +202,7 @@ public class EventInfoActivity extends Activity implements View.OnClickListener,
     private Cursor mEventCursor;
     private Cursor mAttendeesCursor;
     private Cursor mCalendarsCursor;
+    private long mEventDtStart;
 
     private long mStartMillis;
     private long mEndMillis;
@@ -493,6 +495,7 @@ public class EventInfoActivity extends Activity implements View.OnClickListener,
         mEventId = mEventCursor.getInt(EVENT_INDEX_ID);
         String rRule = mEventCursor.getString(EVENT_INDEX_RRULE);
         mIsRepeating = !TextUtils.isEmpty(rRule);
+        mEventDtStart = mEventCursor.getLong(EVENT_INDEX_DTSTART);
         return false;
     }
 
@@ -888,6 +891,17 @@ public class EventInfoActivity extends Activity implements View.OnClickListener,
     }
 
     private void updateView() {
+        Time timeDtstart = new Time();
+        Time timeBegin = new Time();
+        Time timeNow = new Time();
+
+        int anniversary;
+        int daysAgo;
+        int monthsAgo;
+        int yearsAgo;
+
+        String ago;
+
         if (mEventCursor == null) {
             return;
         }
@@ -966,6 +980,74 @@ public class EventInfoActivity extends Activity implements View.OnClickListener,
             eventRecurrence.setStartDate(date);
             String repeatString = EventRecurrenceFormatter.getRepeatString(getResources(),
                     eventRecurrence);
+
+            flags = DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_YEAR
+                    | DateUtils.FORMAT_SHOW_WEEKDAY | DateUtils.FORMAT_ABBREV_MONTH
+                    | DateUtils.FORMAT_ABBREV_WEEKDAY;
+
+            repeatString += " (";
+            repeatString += getResources().getText(R.string.edit_event_from_label).toString()
+                    .toLowerCase();
+            repeatString += " ";
+            repeatString += Utils.formatDateRange(this, mEventDtStart, mEventDtStart, flags)
+                    .toString();
+            repeatString += ")";
+
+            timeDtstart.set(mEventDtStart);
+            timeBegin.set(mStartMillis);
+            timeNow.set(System.currentTimeMillis());
+
+            anniversary = timeBegin.year - timeDtstart.year;
+            daysAgo = timeNow.monthDay - timeDtstart.monthDay;
+            monthsAgo = timeNow.month - timeDtstart.month;
+            yearsAgo = timeNow.year - timeDtstart.year;
+
+            if (daysAgo < 0) {
+                daysAgo += timeDtstart.getActualMaximum(Time.MONTH_DAY);
+                monthsAgo -= 1;
+            }
+
+            if (monthsAgo < 0) {
+                monthsAgo += 12;
+                yearsAgo -= 1;
+            }
+
+            if (rRule.contains("FREQ=YEARLY") && !rRule.contains("INTERVAL")
+                    && !rRule.contains("BYDAY") && !rRule.contains("BYMONTH")
+                    && !rRule.contains("BYMONTHDAY") && !rRule.contains("BYHOUR")
+                    && !rRule.contains("BYMINUTE")) {
+                if (anniversary > 0) {
+                    title.append(" <" + anniversary + ">");
+                }
+                
+                if (yearsAgo > 0 || monthsAgo > 0 || daysAgo > 0) {
+                    repeatString += " - ";
+
+                    if (yearsAgo > 0) {
+                        ago = getResources().getQuantityString(R.plurals.Nyears, yearsAgo);
+                        repeatString += String.format(ago, yearsAgo);
+                        repeatString += " ";
+                    }
+
+                    if (monthsAgo > 0) {
+                        ago = getResources().getQuantityString(R.plurals.Nmonths, monthsAgo);
+                        repeatString += String.format(ago, monthsAgo);
+                        repeatString += " ";
+                    }
+
+                    if (daysAgo > 0) {
+                        ago = getResources().getQuantityString(R.plurals.Ndays, daysAgo);
+                        repeatString += String.format(ago, daysAgo);
+                        repeatString += " ";
+                    }
+
+                    repeatString += getResources().getText(R.string.ago_label).toString();
+                }
+
+                repeatString += ")";
+            }
+
+                    
             setTextCommon(R.id.repeat, repeatString);
         } else {
             setVisibilityCommon(R.id.repeat_container, View.GONE);

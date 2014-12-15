@@ -23,6 +23,7 @@ import android.provider.Calendar.Attendees;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
 import android.text.format.DateUtils;
+import android.text.format.Time;
 import android.view.View;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
@@ -52,6 +53,11 @@ public class AgendaAdapter extends ResourceCursorAdapter {
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
         ViewHolder holder = null;
+
+        Time timeDtstart = new Time();
+        Time timeBegin = new Time();
+
+        int anniversary;
 
         // Listview may get confused and pass in a different type of view since
         // we keep shifting data around. Not a big problem.
@@ -95,6 +101,7 @@ public class AgendaAdapter extends ResourceCursorAdapter {
         // When
         long begin = cursor.getLong(AgendaWindowAdapter.INDEX_BEGIN);
         long end = cursor.getLong(AgendaWindowAdapter.INDEX_END);
+        long dtstart = cursor.getLong(AgendaWindowAdapter.INDEX_DTSTART);
         boolean allDay = cursor.getInt(AgendaWindowAdapter.INDEX_ALL_DAY) != 0;
         int flags;
         String whenString;
@@ -109,6 +116,30 @@ public class AgendaAdapter extends ResourceCursorAdapter {
 
         whenString = Utils.formatDateRange(context, begin, end, flags).toString();
         when.setText(whenString);
+
+        flags = DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_YEAR
+                | DateUtils.FORMAT_SHOW_WEEKDAY | DateUtils.FORMAT_ABBREV_MONTH
+                | DateUtils.FORMAT_ABBREV_WEEKDAY;
+        when.append(" (");
+        when.append(mResources.getText(R.string.edit_event_from_label).toString().toLowerCase());
+        when.append(" ");
+        when.append(Utils.formatDateRange(context, dtstart, dtstart, flags).toString());
+        when.append(")");
+
+        timeDtstart.set(dtstart);
+        timeBegin.set(begin);
+
+        anniversary = timeBegin.year - timeDtstart.year;
+
+        //String rrule = cursor.getString(AgendaWindowAdapter.INDEX_RRULE);
+        //if (rrule.contains("FREQ=YEARLY") && !rrule.contains("INTERVAL")
+        //        && !rrule.contains("BYDAY") && !rrule.contains("BYMONTH")
+        //        && !rrule.contains("BYMONTHDAY") && !rrule.contains("BYHOUR")
+        //        && !rrule.contains("BYMINUTE")) {
+            if (anniversary > 0) {
+                title.append(" <" + anniversary + ">");
+            }
+        //}
 
         String rrule = cursor.getString(AgendaWindowAdapter.INDEX_RRULE);
         if (!TextUtils.isEmpty(rrule)) {
